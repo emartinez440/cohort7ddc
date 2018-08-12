@@ -34,7 +34,12 @@ namespace ContosoUniversity.Controllers
             }
 
             var student = await _context.Students
+                .Include(y => y.Enrollments)
+                    .ThenInclude(y => y.Course)
+                .AsNoTracking()
                 .SingleOrDefaultAsync(m => m.ID == id);
+
+
             if (student == null)
             {
                 return NotFound();
@@ -54,13 +59,21 @@ namespace ContosoUniversity.Controllers
         // more details see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("ID,LastName,FirstMidName,EnrollmentDate")] Student student)
+        public async Task<IActionResult> Create([Bind("LastName,FirstMidName,EnrollmentDate")] Student student)
         {
+            try
+            { 
             if (ModelState.IsValid)
             {
                 _context.Add(student);
                 await _context.SaveChangesAsync();
                 return RedirectToAction(nameof(Index));
+            }
+            }
+            catch(DbUpdateException ex)
+            {
+                //log the error
+                ModelState.AddModelError("", "Unable to save chages try again");
             }
             return View(student);
         }
